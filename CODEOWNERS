@@ -1,0 +1,294 @@
+# =============================================================================
+# CODEOWNERS — 19May_2 DevOps Platform Reference Architecture
+# =============================================================================
+#
+# This file declares the path-based reviewer assignment for the repository.
+# When a pull request modifies files matching one of the patterns below,
+# the listed teams are automatically requested as reviewers, and (when
+# branch protection is configured with "Require review from Code Owners")
+# their approval is required before the PR can be merged.
+#
+# Spec & syntax reference:
+#   https://docs.github.com/en/repositories/managing-your-repositories-settings-and-customization/customizing-your-repository/about-code-owners
+#
+# Notes about syntax — important when editing this file:
+#   * Each non-comment line has the form: <path-pattern> @owner [@owner ...].
+#   * Patterns use gitignore-style globs anchored at the repository root.
+#   * A leading slash ("/") anchors the pattern to the repository root.
+#   * A trailing slash ("/") matches everything inside that directory,
+#     recursively (i.e. "/docs/" is equivalent to "/docs/**").
+#   * Comments must start at the beginning of a line — do NOT append a
+#     trailing comment after a pattern, because the GitHub CODEOWNERS
+#     parser is known to handle that inconsistently.
+#   * The **last matching pattern wins**, so this file is sorted
+#     general-to-specific: the global default sits at the very top,
+#     top-level directory ownership comes next, and the more granular
+#     sub-directory overrides come last.
+#
+# Placeholder teams — replace before enabling branch protection:
+#   The team handles below (@19May_2/<team>) are notional placeholders.
+#   Each adopter of this reference architecture is expected to substitute
+#   real team handles or individual usernames belonging to their GitHub
+#   organization before enabling "Require review from Code Owners" on
+#   the protected branches. The organization name "19May_2" mirrors the
+#   repository identity declared in §1.1 of the technical specification.
+#
+# Notional team responsibilities:
+#   @19May_2/platform-maintainers   Overall stewardship of the platform
+#                                   reference architecture; final review
+#                                   on cross-cutting changes.
+#   @19May_2/devex                  Developer experience: CI/CD pipelines,
+#                                   reusable workflows, Backstage IDP,
+#                                   working examples, scaffolding.
+#   @19May_2/docs                   Documentation site, MkDocs config,
+#                                   glossary, onboarding, getting-started.
+#   @19May_2/architecture           Architecture decision records (ADRs)
+#                                   and component-map narrative docs.
+#   @19May_2/sre                    Observability, SLOs, runbooks,
+#                                   incident response, progressive delivery.
+#   @19May_2/infra                  Cloud infrastructure: Terraform/OpenTofu
+#                                   modules, Crossplane providers, IaC scan.
+#   @19May_2/security               Supply chain, secrets, policy-as-code,
+#                                   security disclosure, IaC security scan.
+#   @19May_2/product                Product owners — co-own SLOs and any
+#                                   user-facing service-level commitments.
+#   @19May_2/finops                 Cost allocation, budgets, OpenCost
+#                                   dashboards and team-level chargeback.
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Global default — every file not matched by a more specific pattern below
+# is owned by the platform maintainers. This entry MUST stay at the top
+# because every later (more specific) pattern overrides it.
+# -----------------------------------------------------------------------------
+
+*                                       @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Repository governance and hygiene
+# Top-level files that govern the project as a whole. Security policy is
+# owned by the security team; everything else by the platform maintainers.
+# -----------------------------------------------------------------------------
+
+/LICENSE                                @19May_2/platform-maintainers
+/README.md                              @19May_2/platform-maintainers
+/CODE_OF_CONDUCT.md                     @19May_2/platform-maintainers
+/CONTRIBUTING.md                        @19May_2/platform-maintainers
+/SECURITY.md                            @19May_2/security
+/CODEOWNERS                             @19May_2/platform-maintainers
+/.gitignore                             @19May_2/platform-maintainers
+/.gitattributes                         @19May_2/platform-maintainers
+/.editorconfig                          @19May_2/platform-maintainers
+/.pre-commit-config.yaml                @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Continuous Integration / Continuous Delivery
+# GitHub Actions workflows, Dependabot config, GitLab CI templates.
+# Owned by Developer Experience (devex) — they curate the reusable
+# pipelines and Dependabot policy.
+# -----------------------------------------------------------------------------
+
+/.github/                               @19May_2/devex
+/.gitlab-ci.yml                         @19May_2/devex
+/.gitlab-ci/                            @19May_2/devex
+
+# Workflows that touch supply-chain signing or release attestation require
+# joint review from devex and security to keep SLSA posture intact.
+/.github/workflows/release.yml          @19May_2/devex @19May_2/security
+/.github/workflows/reusable-sign.yml    @19May_2/devex @19May_2/security
+/.github/workflows/reusable-scan.yml    @19May_2/devex @19May_2/security
+/.github/workflows/policy.yml           @19May_2/devex @19May_2/security
+/.github/workflows/iac.yml              @19May_2/devex @19May_2/infra
+/.github/dependabot.yml                 @19May_2/devex @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Documentation site (MkDocs Material)
+# The docs team owns the static site as a whole. Architecture decision
+# records, runbooks, and the per-component pages have more specific
+# owners declared below (last-match-wins).
+# -----------------------------------------------------------------------------
+
+/mkdocs.yml                             @19May_2/docs
+/docs/                                  @19May_2/docs
+/docs/getting-started/                  @19May_2/docs @19May_2/devex
+/docs/architecture/                     @19May_2/architecture @19May_2/platform-maintainers
+/docs/components/                       @19May_2/docs @19May_2/platform-maintainers
+/docs/adr/                              @19May_2/architecture @19May_2/platform-maintainers
+/docs/runbooks/                         @19May_2/sre
+/docs/diagrams/                         @19May_2/architecture @19May_2/docs
+/docs/glossary.md                       @19May_2/docs
+
+# -----------------------------------------------------------------------------
+# GitOps controllers (Argo CD primary, Flux alternative)
+# Cluster reconciliation manifests — owned by platform maintainers because
+# changes here affect the desired-state-of-everything-in-cluster contract.
+# -----------------------------------------------------------------------------
+
+/gitops/                                @19May_2/platform-maintainers
+/gitops/argocd/                         @19May_2/platform-maintainers
+/gitops/argocd/applications/            @19May_2/platform-maintainers @19May_2/devex
+/gitops/argocd/applicationsets/         @19May_2/platform-maintainers @19May_2/devex
+/gitops/argocd/projects/                @19May_2/platform-maintainers
+/gitops/argocd/install/                 @19May_2/platform-maintainers
+/gitops/flux/                           @19May_2/platform-maintainers
+/gitops/flux/kustomizations/            @19May_2/platform-maintainers
+/gitops/flux/helmreleases/              @19May_2/platform-maintainers
+/gitops/flux/install/                   @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Infrastructure as Code
+# Terraform / OpenTofu modules and environment compositions, plus
+# Crossplane providers, XRDs, and compositions for K8s-native infra.
+# Owned by the infra team; environment-specific roots are reviewed
+# jointly with platform maintainers.
+# -----------------------------------------------------------------------------
+
+/infrastructure/                        @19May_2/infra
+/infrastructure/terraform/              @19May_2/infra
+/infrastructure/terraform/modules/      @19May_2/infra
+/infrastructure/terraform/environments/ @19May_2/infra @19May_2/platform-maintainers
+/infrastructure/terraform/backend.tf.example @19May_2/infra @19May_2/platform-maintainers
+/infrastructure/crossplane/             @19May_2/infra
+/infrastructure/crossplane/providers/   @19May_2/infra
+/infrastructure/crossplane/xrds/        @19May_2/infra @19May_2/platform-maintainers
+/infrastructure/crossplane/compositions/ @19May_2/infra @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Kubernetes manifests and Helm umbrella chart
+# Base manifests and per-environment overlays; the umbrella chart that
+# pins every platform dependency to an exact version.
+# -----------------------------------------------------------------------------
+
+/kubernetes/                            @19May_2/platform-maintainers
+/kubernetes/base/                       @19May_2/platform-maintainers
+/kubernetes/overlays/                   @19May_2/platform-maintainers
+/helm/                                  @19May_2/platform-maintainers
+/helm/platform/                         @19May_2/platform-maintainers
+/helm/platform/Chart.yaml               @19May_2/platform-maintainers @19May_2/security
+/helm/platform/values.yaml              @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Policy as Code
+# Kyverno, OPA Gatekeeper, raw OPA bundles, and IaC scanners (Checkov,
+# tfsec, Conftest). Security owns admission and runtime policy; IaC
+# scanner configs are jointly reviewed with infra because they gate
+# the Terraform/Crossplane code those teams ship.
+# -----------------------------------------------------------------------------
+
+/policy/                                @19May_2/security
+/policy/kyverno/                        @19May_2/security
+/policy/gatekeeper/                     @19May_2/security
+/policy/gatekeeper/constrainttemplates/ @19May_2/security
+/policy/gatekeeper/constraints/         @19May_2/security
+/policy/opa/                            @19May_2/security
+/policy/iac/                            @19May_2/security @19May_2/infra
+/policy/iac/conftest/                   @19May_2/security @19May_2/infra
+
+# -----------------------------------------------------------------------------
+# Security — supply chain and secret management
+# Cosign keys/policies, Syft SBOM config, Grype/Trivy scanner configs,
+# SLSA provenance template, External Secrets Operator manifests, and
+# Vault Helm values and policies. All security-owned; secret store
+# changes require a security reviewer per AAP §0.7.3.
+# -----------------------------------------------------------------------------
+
+/security/                              @19May_2/security
+/security/supply-chain/                 @19May_2/security
+/security/supply-chain/cosign/          @19May_2/security
+/security/supply-chain/sbom/            @19May_2/security
+/security/supply-chain/scan/            @19May_2/security
+/security/supply-chain/slsa/            @19May_2/security
+/security/secrets/                      @19May_2/security
+/security/secrets/external-secrets/     @19May_2/security
+/security/secrets/vault/                @19May_2/security
+/security/secrets/vault/policies/       @19May_2/security
+
+# -----------------------------------------------------------------------------
+# Observability — Prometheus, Grafana, Loki, Tempo, OpenTelemetry, SLOs
+# Owned by the SRE team. SLO definitions are co-owned with product
+# because SLOs encode user-facing service-level commitments.
+# -----------------------------------------------------------------------------
+
+/observability/                         @19May_2/sre
+/observability/prometheus/              @19May_2/sre
+/observability/prometheus/alerts/       @19May_2/sre
+/observability/grafana/                 @19May_2/sre
+/observability/grafana/dashboards/      @19May_2/sre
+/observability/loki/                    @19May_2/sre
+/observability/tempo/                   @19May_2/sre
+/observability/otel/                    @19May_2/sre @19May_2/platform-maintainers
+/observability/slo/                     @19May_2/sre @19May_2/product
+
+# -----------------------------------------------------------------------------
+# Progressive delivery — Argo Rollouts (K8s-native) and Flagger (mesh)
+# Co-owned by platform maintainers (controller installation/lifecycle)
+# and SRE (rollout strategies, analysis templates, metric providers).
+# -----------------------------------------------------------------------------
+
+/progressive-delivery/                  @19May_2/platform-maintainers @19May_2/sre
+/progressive-delivery/argo-rollouts/    @19May_2/platform-maintainers @19May_2/sre
+/progressive-delivery/argo-rollouts/install/ @19May_2/platform-maintainers
+/progressive-delivery/argo-rollouts/examples/ @19May_2/devex @19May_2/sre
+/progressive-delivery/flagger/          @19May_2/platform-maintainers @19May_2/sre
+/progressive-delivery/flagger/install/  @19May_2/platform-maintainers
+/progressive-delivery/flagger/examples/ @19May_2/devex @19May_2/sre
+
+# -----------------------------------------------------------------------------
+# Internal Developer Platform (Backstage)
+# Catalog, app-config, and golden-path software templates. Devex owns
+# the IDP; template skeletons are co-owned with platform maintainers
+# because they encode the platform's adoption contract.
+# -----------------------------------------------------------------------------
+
+/backstage/                             @19May_2/devex
+/backstage/catalog/                     @19May_2/devex
+/backstage/templates/                   @19May_2/devex @19May_2/platform-maintainers
+/backstage/templates/golden-path-service/ @19May_2/devex @19May_2/platform-maintainers
+/backstage/templates/golden-path-service/skeleton/ @19May_2/devex @19May_2/platform-maintainers
+/backstage/app-config.yaml              @19May_2/devex
+/backstage/values.yaml                  @19May_2/devex @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# FinOps — OpenCost values and budgets-as-code
+# Owned jointly by the finops team and platform maintainers because
+# budget thresholds drive alerting that the platform must enforce.
+# -----------------------------------------------------------------------------
+
+/finops/                                @19May_2/finops @19May_2/platform-maintainers
+/finops/opencost/                       @19May_2/finops @19May_2/platform-maintainers
+/finops/budgets/                        @19May_2/finops @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Working example — sample-service
+# Reference implementation that demonstrates the adoption path end-to-end.
+# Owned by devex because it is a developer-facing artifact.
+# -----------------------------------------------------------------------------
+
+/examples/                              @19May_2/devex
+/examples/sample-service/               @19May_2/devex
+/examples/sample-service/.github/       @19May_2/devex
+/examples/sample-service/k8s/           @19May_2/devex @19May_2/platform-maintainers
+
+# -----------------------------------------------------------------------------
+# Helper scripts
+# Cluster and Argo CD bootstrap, local tooling install, lint/SBOM/sign
+# helpers. Owned by platform maintainers; signing helpers require a
+# security reviewer per AAP §0.7.3 (every image must be signed).
+# -----------------------------------------------------------------------------
+
+/scripts/                               @19May_2/platform-maintainers
+/scripts/bootstrap-cluster.sh           @19May_2/platform-maintainers @19May_2/infra
+/scripts/bootstrap-argocd.sh            @19May_2/platform-maintainers
+/scripts/install-tooling.sh             @19May_2/platform-maintainers @19May_2/devex
+/scripts/lint-all.sh                    @19May_2/platform-maintainers @19May_2/devex
+/scripts/sbom.sh                        @19May_2/platform-maintainers @19May_2/security
+/scripts/sign.sh                        @19May_2/platform-maintainers @19May_2/security
+
+# =============================================================================
+# End of CODEOWNERS.
+#
+# Reminder: replace @19May_2/<team> handles with concrete teams or users
+# before enabling branch protection that requires CODEOWNERS approval.
+# Refer to CONTRIBUTING.md for the review workflow that consumes this file.
+# =============================================================================
