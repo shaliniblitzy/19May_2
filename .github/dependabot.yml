@@ -1,0 +1,370 @@
+---
+# =============================================================================
+# .github/dependabot.yml — Dependabot v2 Configuration
+# 19May_2 — DevOps Platform Reference Architecture
+# =============================================================================
+#
+# Purpose
+# -------
+# Configures GitHub's Dependabot service to automatically scan and open
+# pull requests for outdated dependencies across the ecosystems that this
+# greenfield DevOps platform reference architecture relies on:
+#
+#   * GitHub Actions workflows used by the CI/CD reusable templates under
+#     .github/workflows/ and the example-service workflow under
+#     examples/sample-service/.github/workflows/.
+#   * Terraform providers and modules used by infrastructure/terraform/
+#     (modules and per-environment composition roots).
+#   * Docker base images used by examples/sample-service/Dockerfile and
+#     backstage/templates/golden-path-service/skeleton/Dockerfile.
+#   * Python packages used by the documentation build
+#     (docs/requirements.txt) for MkDocs Material and plugins.
+#
+# All Dependabot pull requests target the "main" branch and carry at
+# least the "dependencies" label so they can be filtered, queried via
+# the GitHub API, and surfaced on triage dashboards. Weekly cadence on
+# Monday at 06:00 UTC concentrates dependency review into one batch per
+# week and avoids US-business-hours notification noise.
+#
+# Reviewer assignment
+# -------------------
+# Every entry assigns "@blitzy-platform/devops-platform" as the
+# placeholder reviewer team. Adopting organizations MUST replace this
+# handle with the appropriate GitHub team that aligns with the
+# path-based ownership expressed in the root CODEOWNERS file. The
+# CODEOWNERS file in this repository uses the notional placeholder
+# organization "@19May_2/<team>" and is itself expected to be re-pointed
+# before branch protection is enabled. Suggested coordination mapping
+# for adopters (sub the "<org>" segment with your GitHub organization
+# name and align the team segment with CODEOWNERS):
+#
+#   GitHub Actions (root)          -> @<org>/devex   (CI/CD pipelines)
+#   GitHub Actions (sample)        -> @<org>/devex   (working examples)
+#   Terraform                      -> @<org>/infra   (IaC modules)
+#   Docker (sample-service)        -> @<org>/devex   (working examples)
+#   Docker (Backstage template)    -> @<org>/devex   (IDP / Backstage)
+#   pip (docs)                     -> @<org>/docs    (documentation site)
+#
+# TODO(adopter): Replace every "@blitzy-platform/devops-platform"
+# reference below with the appropriate "@<org>/<team>" handle from your
+# CODEOWNERS file before enabling branch protection that requires Code
+# Owner review.
+#
+# Pin-by-SHA discipline
+# ---------------------
+# This file is the automation arm of the project rule
+# "Pin third-party actions by SHA, not tag" (per the Agent Action Plan
+# §0.7.3). Dependabot proposes newer commit SHAs for the same action
+# reference; it never converts a SHA-pinned "uses:" line back to a
+# floating tag. Reviewers MUST verify that every Dependabot pull
+# request preserves SHA-pinning on every "uses:" line touched.
+#
+# Schema reference
+# ----------------
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# =============================================================================
+
+version: 2
+
+updates:
+
+  # ===========================================================================
+  # Entry 1 — GitHub Actions at the repository root.
+  #
+  # Scans every workflow file under .github/workflows/*.yml. Dependabot
+  # proposes newer commit SHAs for actions referenced by "uses:" lines
+  # (e.g. actions/checkout, actions/setup-node, docker/build-push-action,
+  # sigstore/cosign-installer, anchore/sbom-action,
+  # slsa-framework/slsa-github-generator). Minor and patch updates for
+  # the common action namespaces are grouped under one PR per week to
+  # keep review volume manageable; major bumps remain individual PRs so
+  # each breaking change gets explicit review.
+  # ===========================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "@blitzy-platform/devops-platform"
+    commit-message:
+      prefix: "chore(actions)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    groups:
+      ci-actions:
+        patterns:
+          - "actions/*"
+          - "docker/*"
+          - "sigstore/*"
+          - "anchore/*"
+          - "slsa-framework/*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Keep this list narrow — every ignore reduces Dependabot's signal.
+    ignore: []
+
+  # ===========================================================================
+  # Entry 2 — GitHub Actions for the sample-service example.
+  #
+  # The example service ships its own workflow at
+  # examples/sample-service/.github/workflows/ci.yml so that downstream
+  # adopters can see the reusable-workflow consumption pattern. It is
+  # scanned separately from the root workflows so review boundaries stay
+  # clean: platform-workflow churn and example-workflow churn do not
+  # blend into one PR. The "example" label makes the source of the bump
+  # obvious in triage queries.
+  # ===========================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/examples/sample-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "example"
+    reviewers:
+      - "@blitzy-platform/devops-platform"
+    commit-message:
+      prefix: "chore(actions)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    groups:
+      ci-actions:
+        patterns:
+          - "actions/*"
+          - "docker/*"
+          - "sigstore/*"
+          - "anchore/*"
+          - "slsa-framework/*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Keep this list narrow — every ignore reduces Dependabot's signal.
+    ignore: []
+
+  # ===========================================================================
+  # Entry 3 — Terraform providers and modules.
+  #
+  # Scans every "*.tf" file under infrastructure/terraform/ (modules and
+  # environments) and proposes updates to provider versions and module
+  # "source = ..." references. Minor and patch provider bumps are
+  # grouped to reduce PR noise; major bumps remain individual PRs
+  # because Terraform major provider releases routinely require
+  # configuration-syntax changes that need explicit human review.
+  # ===========================================================================
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "terraform"
+    reviewers:
+      - "@blitzy-platform/devops-platform"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    groups:
+      terraform-providers:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Keep this list narrow — every ignore reduces Dependabot's signal.
+    ignore: []
+
+  # ===========================================================================
+  # Entry 4 — Docker base image for the sample-service example.
+  #
+  # Scans examples/sample-service/Dockerfile. Patch-level base image
+  # bumps (security/CVE fixes) are grouped to one PR per week. Minor
+  # and major bumps remain individual PRs because base-image major or
+  # minor releases frequently change OS userspace, default tooling, or
+  # base distribution, and can break the build without notice.
+  # ===========================================================================
+  - package-ecosystem: "docker"
+    directory: "/examples/sample-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "docker"
+      - "example"
+    reviewers:
+      - "@blitzy-platform/devops-platform"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    groups:
+      docker-base-images:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+    # Keep this list narrow — every ignore reduces Dependabot's signal.
+    ignore: []
+
+  # ===========================================================================
+  # Entry 5 — Docker base image for the Backstage golden-path-service
+  # software template skeleton.
+  #
+  # Scans backstage/templates/golden-path-service/skeleton/Dockerfile.
+  # This Dockerfile becomes the seed Dockerfile every new service
+  # scaffolded from the Backstage template inherits, so its base image
+  # currency is platform-wide signal. Patch bumps are grouped; minor
+  # and major bumps remain individual PRs for the same reasons as
+  # Entry 4. The "backstage-template" label distinguishes these PRs
+  # from sample-service base-image PRs in triage dashboards.
+  # ===========================================================================
+  - package-ecosystem: "docker"
+    directory: "/backstage/templates/golden-path-service/skeleton"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "docker"
+      - "backstage-template"
+    reviewers:
+      - "@blitzy-platform/devops-platform"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    groups:
+      docker-base-images:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+    # Keep this list narrow — every ignore reduces Dependabot's signal.
+    ignore: []
+
+  # ===========================================================================
+  # Entry 6 — Python packages for the documentation build (OPTIONAL).
+  #
+  # Dependabot activates this entry the moment "docs/requirements.txt"
+  # lands in the repository. That file pins mkdocs-material and the
+  # plugin set enumerated by mkdocs.yml (per AAP §0.5.1 and §0.5.2):
+  # mkdocs, mkdocs-material, mkdocs-mermaid2-plugin,
+  # mkdocs-awesome-pages-plugin, mkdocs-include-markdown-plugin,
+  # mkdocs-minify-plugin, pymdown-extensions, etc.
+  #
+  # Until docs/requirements.txt is created by the docs/ folder agent
+  # this entry is a no-op — Dependabot reports an informational notice
+  # on the repository's Insights -> Dependency graph view, which is
+  # benign. Pre-declaring the entry here means Dependabot picks up the
+  # ecosystem the instant the requirements file is committed, with
+  # zero additional configuration.
+  #
+  # All mkdocs-* plugin minor/patch updates are grouped into a single
+  # PR per week to keep documentation-dependency review tractable.
+  # ===========================================================================
+  - package-ecosystem: "pip"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "pip"
+      - "docs"
+    reviewers:
+      - "@blitzy-platform/devops-platform"
+    commit-message:
+      prefix: "chore(docs)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    groups:
+      mkdocs-plugins:
+        patterns:
+          - "mkdocs-*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Keep this list narrow — every ignore reduces Dependabot's signal.
+    ignore: []
+
+# =============================================================================
+# Closing notes
+# =============================================================================
+#
+# Dependabot v2 schema:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# This file is the automation arm of the project rule
+# "Pin third-party actions by SHA, not tag" (Agent Action Plan §0.7.3).
+# Dependabot never converts SHA-pinned references back to floating
+# tags; it only proposes the next commit SHA for the same action.
+# Reviewers MUST verify that every Dependabot pull request keeps every
+# touched "uses:" line pinned by commit SHA.
+#
+# Reviewer placeholder — replace before enabling branch protection
+# -----------------------------------------------------------------
+# The "@blitzy-platform/devops-platform" handle used throughout this
+# file is a notional placeholder. Adopting organizations MUST replace
+# it with the appropriate team handle from their GitHub organization,
+# aligned with the path-based ownership declared in /CODEOWNERS.
+#
+# Notes on Dependabot's CODEOWNERS coupling
+# -----------------------------------------
+# GitHub has begun shifting Dependabot away from the "reviewers:" field
+# in favor of automatic CODEOWNERS-based review assignment for newer
+# repositories. The "reviewers:" field is still honored on existing
+# repos. If your organization has enabled the CODEOWNERS-based
+# behavior, you MAY drop the "reviewers:" blocks from every entry
+# above and let CODEOWNERS drive review assignment — Dependabot will
+# then request the team that owns each modified path automatically.
+#
+# Extending this file
+# -------------------
+# When the sample-service or Backstage template skeleton acquires a
+# language manifest (package.json, go.mod, Cargo.toml, requirements.txt,
+# Gemfile, etc.), add a matching "package-ecosystem" entry below
+# following the same shape: weekly Monday 06:00 UTC, target-branch
+# "main", "dependencies" label, Conventional Commits "chore(<scope>)"
+# prefix, grouped minor/patch updates, empty ignore list.
+#
+# =============================================================================
