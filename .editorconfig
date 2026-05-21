@@ -1,0 +1,133 @@
+# EditorConfig is awesome: https://editorconfig.org
+#
+# .editorconfig — Cross-editor convention file for the 19May_2 DevOps
+# platform reference architecture.
+#
+# Purpose:
+#   Normalize indentation, line endings, character set, and whitespace
+#   handling across every editor and IDE used by contributors so that the
+#   platform's source-of-truth — the Git repository — stays free of
+#   incidental whitespace churn. Honored natively by VS Code, IntelliJ,
+#   Vim, Emacs (via plugin), Sublime Text, and most modern editors.
+#
+# Defense-in-depth:
+#   - .gitattributes enforces `eol=lf` at the Git layer (normalization on
+#     checkout / commit) — see `* text=auto eol=lf` in .gitattributes.
+#   - .editorconfig (this file) enforces the same conventions at the
+#     editor layer so violations never reach a commit.
+#   - .pre-commit-config.yaml runs editorconfig-checker, yamllint,
+#     markdownlint, shellcheck, etc., to catch any violations that slip
+#     through both layers.
+#
+# Spec reference:
+#   https://spec.editorconfig.org/
+
+# Top-level — stop EditorConfig from walking upward past this file.
+root = true
+
+# ---------------------------------------------------------------------------
+# Universal default: applied to every file unless overridden by a more
+# specific glob below. The default of 2-space indentation matches the
+# YAML-heavy nature of this repository (Kubernetes manifests, GitHub
+# workflows, Helm charts, Argo CD Applications, Kyverno ClusterPolicies).
+# ---------------------------------------------------------------------------
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# ---------------------------------------------------------------------------
+# YAML — Kubernetes manifests, Helm values, GitHub Actions workflows,
+# Argo CD Applications, Kyverno policies, Flux Kustomizations, etc.
+# Two-space indentation is the de-facto standard and required by yamllint
+# defaults; explicit override here makes the rule self-evident.
+# ---------------------------------------------------------------------------
+[*.{yml,yaml}]
+indent_size = 2
+
+# ---------------------------------------------------------------------------
+# Markdown — docs/ site, ADRs, runbooks, READMEs.
+# Trailing whitespace is meaningful in Markdown: two trailing spaces produce
+# a hard line break (<br>) within a paragraph, so we MUST NOT strip them.
+# max_line_length = off lets prose flow naturally; markdownlint enforces
+# stricter line-length rules where appropriate via its own configuration.
+# ---------------------------------------------------------------------------
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# ---------------------------------------------------------------------------
+# Terraform / OpenTofu / HCL — infrastructure/terraform/**, Vault policies
+# (.hcl), and any other HashiCorp configuration language file.
+# `terraform fmt` enforces 2-space indentation; matching it here keeps
+# pre-commit hooks (terraform fmt, tflint) idempotent.
+# ---------------------------------------------------------------------------
+[*.{tf,tfvars,hcl}]
+indent_size = 2
+
+# ---------------------------------------------------------------------------
+# Shell scripts — scripts/*.sh, examples/**/scripts/*.sh, hooks, helpers.
+# Two-space indentation is preferred by shellcheck-aware style guides
+# (Google Shell Style Guide, shellharden) and is consistent with the
+# universal default.
+# ---------------------------------------------------------------------------
+[*.sh]
+indent_size = 2
+
+# ---------------------------------------------------------------------------
+# Python — mkdocs plugins, pre-commit hook configuration, helper scripts,
+# Backstage template skeletons. PEP 8 calls for 4-space indentation and
+# the platform's tooling (Black, Ruff, isort) defaults to a 100-char line
+# length — match those defaults here so editors hint correctly.
+# ---------------------------------------------------------------------------
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+# ---------------------------------------------------------------------------
+# Go — any Go source produced by adopters following the platform template.
+# `gofmt` mandates tabs for indentation; this is non-negotiable. The
+# nominal tab width of 4 is conventional for editor display only —
+# `gofmt` itself does not care about the displayed width.
+# ---------------------------------------------------------------------------
+[*.go]
+indent_style = tab
+indent_size = 4
+
+# ---------------------------------------------------------------------------
+# JavaScript / TypeScript — Backstage skeleton (templates/golden-path-
+# service/skeleton), Grafana dashboards-as-code helpers, Dagger TypeScript
+# pipeline modules. Two-space indent and single quotes match Prettier /
+# ESLint defaults used by the Backstage and Dagger ecosystems.
+# ---------------------------------------------------------------------------
+[*.{js,jsx,ts,tsx}]
+indent_size = 2
+quote_type = single
+
+# ---------------------------------------------------------------------------
+# JSON — Grafana dashboards (observability/grafana/dashboards/*.json),
+# SLSA provenance templates, package.json files in skeletons. Two-space
+# indentation matches `jq` and `prettier` defaults.
+# ---------------------------------------------------------------------------
+[*.json]
+indent_size = 2
+
+# ---------------------------------------------------------------------------
+# Makefile — recipe commands MUST begin with a literal TAB character or
+# `make` will reject the file ("missing separator"). Override the global
+# default of spaces to enforce this requirement.
+# ---------------------------------------------------------------------------
+[Makefile]
+indent_style = tab
+
+# ---------------------------------------------------------------------------
+# Dockerfile — `Dockerfile`, `Dockerfile.dev`, `Dockerfile.prod`, etc.
+# Four-space indentation is the de-facto convention for multi-line RUN /
+# COPY / ENV instructions in the Docker community and matches hadolint
+# style recommendations.
+# ---------------------------------------------------------------------------
+[{Dockerfile,Dockerfile.*}]
+indent_size = 4
